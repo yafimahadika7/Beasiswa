@@ -1,7 +1,7 @@
 <?php
 $host   = "localhost";
 $user   = "root";      // default XAMPP
-$pass   = "";          // kalau pakai password, isi di sini
+$pass   = "janganangel";          // kalau pakai password, isi di sini
 $dbname = "db_beasiswa";
 
 $koneksi = mysqli_connect($host, $user, $pass, $dbname);
