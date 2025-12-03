@@ -85,15 +85,27 @@ ob_start();
                             $status = $statusPengajuan['status_pendaftaran'];
 
                             // Tentukan warna badge
-                            $badgeColor = match ($status) {
-                                'Diajukan' => 'secondary',
-                                'Diproses' => 'info',
-                                'Lolos Verifikasi' => 'success',
-                                'Tidak Lolos' => 'danger',
-                                default => 'secondary'
-                            };
-                            ?>
+                            switch ($status) {
+                                case 'Diajukan':
+                                    $badgeColor = 'secondary';
+                                    break;
 
+                                case 'Diproses':
+                                    $badgeColor = 'info';
+                                    break;
+
+                                case 'Lolos Verifikasi':
+                                    $badgeColor = 'success';
+                                    break;
+
+                                case 'Tidak Lolos':
+                                    $badgeColor = 'danger';
+                                    break;
+
+                                default:
+                                    $badgeColor = 'secondary';
+                            }
+                            ?>
                             <span class="badge bg-<?= $badgeColor ?> text-uppercase">
                                 <?= $status ?>
                             </span>
