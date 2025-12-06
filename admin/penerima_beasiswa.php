@@ -11,6 +11,66 @@ if (empty($_SESSION['id_user']) || ($_SESSION['role'] ?? '') !== 'admin') {
 
 $page_title = "Penerima Beasiswa";
 
+/* ====================================================
+   EXPORT CSV PENERIMA BEASISWA
+==================================================== */
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=penerima_beasiswa.csv');
+
+    $output = fopen('php://output', 'w');
+
+    // Header kolom CSV
+    fputcsv($output, [
+        'NPM',
+        'Nama',
+        'Prodi',
+        'Fakultas',
+        'Jenis Beasiswa',
+        'Tahun',
+        'Tanggal Approve',
+        'Approved By'
+    ]);
+
+    // Query data penerima beasiswa
+    $sql_export = "
+        SELECT 
+            p.npm,
+            m.nama,
+            m.prodi,
+            m.fakultas,
+            b.nama_beasiswa,
+            b.jenis,
+            YEAR(p.tgl_daftar) AS tahun,
+            p.tgl_daftar
+        FROM pendaftaran p
+        JOIN mahasiswa m ON m.npm = p.npm
+        JOIN beasiswa b ON b.id_beasiswa = p.id_beasiswa
+        WHERE p.status_reviewer='Diterima'
+          AND p.status_admin='Valid'
+        ORDER BY p.id_pendaftaran DESC
+    ";
+
+    $result_export = $koneksi->query($sql_export);
+
+    while ($row = $result_export->fetch_assoc()) {
+        fputcsv($output, [
+            $row['npm'],
+            $row['nama'],
+            $row['prodi'],
+            $row['fakultas'],
+            $row['nama_beasiswa'] . ' (' . $row['jenis'] . ')',
+            $row['tahun'],
+            $row['tgl_daftar'],
+            'Administrator'
+        ]);
+    }
+
+    fclose($output);
+    exit;
+}
+
 // ===== SEARCH FILTER =====
 $keyword = trim($_GET['q'] ?? '');
 
@@ -65,14 +125,26 @@ ob_start();
 
         <h3 class="mb-3">Penerima Beasiswa</h3>
 
-        <!-- SEARCH -->
-        <form method="get" class="d-flex justify-content-end mb-3" style="max-width: 350px; margin-left:auto;">
-            <div class="input-group">
-                <input type="text" name="q" class="form-control" placeholder="Cari..."
-                    value="<?= htmlspecialchars($keyword) ?>">
-                <button class="btn btn-primary"><i class="bi bi-search"></i></button>
-            </div>
-        </form>
+        <!-- EXPORT + SEARCH -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <!-- Tombol Export CSV di kiri -->
+            <a href="penerima_beasiswa.php?export=csv" class="btn btn-info">
+                <i class="bi bi-download me-1"></i> Export CSV
+            </a>
+
+            <!-- Search di kanan -->
+            <form method="get" class="d-flex" style="max-width: 350px;">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Cari..."
+                        value="<?= htmlspecialchars($keyword) ?>">
+                    <button class="btn btn-primary">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+
+        </div>
 
         <div class="table-responsive">
             <table class="table table-bordered table-striped align-middle">

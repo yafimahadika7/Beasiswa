@@ -328,10 +328,61 @@ if (isset($_GET['hapus'])) {
 }
 
 /* ===========================================================
+   EXPORT CSV
+=========================================================== */
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=data_mahasiswa.csv');
+
+    $output = fopen('php://output', 'w');
+
+    // Header kolom
+    fputcsv($output, [
+        'NPM',
+        'Nama',
+        'Prodi',
+        'Fakultas',
+        'Angkatan',
+        'Semester',
+        'IPK Terakhir',
+        'Alamat',
+        'No HP'
+    ]);
+
+    // Ambil data dari DB
+    $query = $koneksi->query("
+        SELECT npm, nama, prodi, fakultas, angkatan, semester, ipk_terakhir, alamat, no_hp
+        FROM mahasiswa
+        ORDER BY npm ASC
+    ");
+
+    while ($row = $query->fetch_assoc()) {
+        fputcsv($output, $row);
+    }
+
+    fclose($output);
+    exit;
+}
+
+
+
+
+/* ===========================================================
    AMBIL DATA MAHASISWA
    =========================================================== */
 $keyword = trim($_GET['q'] ?? '');
-$dataMhs = [];
+$sort = $_GET['sort'] ?? 'npm';              // default sort by npm
+$order = $_GET['order'] ?? 'asc';           // default ascending
+
+// daftar kolom yang aman
+$allowedSort = ['npm', 'nama', 'prodi', 'fakultas', 'angkatan', 'semester'];
+
+if (!in_array($sort, $allowedSort)) {
+    $sort = 'npm';
+}
+
+$order = strtolower($order) === 'desc' ? 'desc' : 'asc';
 
 if ($keyword !== '') {
     $sql = "
@@ -343,7 +394,7 @@ if ($keyword !== '') {
            OR nama LIKE ?
            OR prodi LIKE ?
            OR fakultas LIKE ?
-        ORDER BY npm ASC
+        ORDER BY $sort $order
     ";
     $like = "%$keyword%";
 
@@ -361,7 +412,7 @@ if ($keyword !== '') {
             npm, nama, prodi, fakultas, angkatan, semester,
             ipk_terakhir, alamat, no_hp
         FROM mahasiswa
-        ORDER BY npm ASC
+        ORDER BY $sort $order
     ");
     while ($row = $res->fetch_assoc()) {
         $dataMhs[] = $row;
@@ -376,6 +427,19 @@ $pageTitle = "Data Mahasiswa";
 // MULAI BAGIAN HTML
 // ===========================================================
 ob_start();
+?>
+
+<?php
+// fungsi pembuat URL sort ASC/DESC
+function sortUrl($column, $currentSort, $currentOrder)
+{
+    // toggle asc ⇄ desc
+    $nextOrder = ($currentSort === $column && $currentOrder === 'asc') ? 'desc' : 'asc';
+
+    $q = isset($_GET['q']) ? '&q=' . urlencode($_GET['q']) : '';
+
+    return "mahasiswa.php?sort=$column&order=$nextOrder$q";
+}
 ?>
 
 <div class="card shadow-sm">
@@ -402,6 +466,10 @@ ob_start();
                 <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalImport">
                     <i class="bi bi-upload me-1"></i> Import CSV/Excel
                 </button>
+
+                <a href="mahasiswa.php?export=csv" class="btn btn-info">
+                    <i class="bi bi-download me-1"></i> Export CSV
+                </a>
             </div>
 
             <!-- Search -->
@@ -427,12 +495,43 @@ ob_start();
                 <thead class="table-primary text-center">
                     <tr>
                         <th>No</th>
-                        <th>NPM</th>
-                        <th>Nama</th>
-                        <th>Prodi</th>
-                        <th>Fakultas</th>
-                        <th>Angkatan</th>
-                        <th>Semester</th>
+
+                        <th>
+                            <a href="<?= sortUrl('npm', $sort, $order) ?>" class="text-dark text-decoration-none">
+                                NPM <?= ($sort == 'npm' ? ($order == 'asc' ? '▲' : '▼') : '') ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="<?= sortUrl('nama', $sort, $order) ?>" class="text-dark text-decoration-none">
+                                Nama <?= ($sort == 'nama' ? ($order == 'asc' ? '▲' : '▼') : '') ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="<?= sortUrl('prodi', $sort, $order) ?>" class="text-dark text-decoration-none">
+                                Prodi <?= ($sort == 'prodi' ? ($order == 'asc' ? '▲' : '▼') : '') ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="<?= sortUrl('fakultas', $sort, $order) ?>" class="text-dark text-decoration-none">
+                                Fakultas <?= ($sort == 'fakultas' ? ($order == 'asc' ? '▲' : '▼') : '') ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="<?= sortUrl('angkatan', $sort, $order) ?>" class="text-dark text-decoration-none">
+                                Angkatan <?= ($sort == 'angkatan' ? ($order == 'asc' ? '▲' : '▼') : '') ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="<?= sortUrl('semester', $sort, $order) ?>" class="text-dark text-decoration-none">
+                                Semester <?= ($sort == 'semester' ? ($order == 'asc' ? '▲' : '▼') : '') ?>
+                            </a>
+                        </th>
+
                         <th>Aksi</th>
                     </tr>
                 </thead>

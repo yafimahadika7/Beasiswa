@@ -31,14 +31,86 @@ if (isset($_POST['validasi_admin'])) {
 }
 
 /* ====================================================
-   AMBIL DATA PENDAFTARAN
+   EXPORT CSV PENDAFTARAN
 ==================================================== */
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=data_pendaftaran.csv');
+
+    $output = fopen('php://output', 'w');
+
+    // Header kolom
+    fputcsv($output, [
+        'ID Pendaftaran',
+        'NPM',
+        'Nama Mahasiswa',
+        'Nama Beasiswa',
+        'Jenis Beasiswa',
+        'Tahun',
+        'Status Reviewer',
+        'Status Admin',
+        'Tanggal Daftar',
+        'Catatan Admin'
+    ]);
+
+    // Query data
+    $sql = "
+        SELECT 
+            p.id_pendaftaran,
+            p.npm,
+            m.nama,
+            b.nama_beasiswa,
+            p.jenis_beasiswa,
+            p.tahun,
+            p.status_reviewer,
+            p.status_admin,
+            p.tgl_daftar,
+            p.catatan_admin
+        FROM pendaftaran p
+        JOIN mahasiswa m ON p.npm = m.npm
+        JOIN beasiswa b ON p.id_beasiswa = b.id_beasiswa
+        ORDER BY p.id_pendaftaran DESC
+    ";
+
+    $res = $koneksi->query($sql);
+
+    while ($row = $res->fetch_assoc()) {
+        fputcsv($output, $row);
+    }
+
+    fclose($output);
+    exit;
+}
+
+
 /* ====================================================
    AMBIL DATA PENDAFTARAN + SEARCH
 ==================================================== */
 
 $keyword = trim($_GET['q'] ?? '');
 $dataList = [];
+
+# SORTING
+$sort = $_GET['sort'] ?? 'id_pendaftaran';  // default
+$order = $_GET['order'] ?? 'desc';          // default
+
+$allowedSort = [
+    'id_pendaftaran',
+    'npm',
+    'nama',
+    'nama_beasiswa',
+    'jenis_beasiswa',
+    'status_reviewer',
+    'status_admin',
+    'tgl_daftar'
+];
+
+if (!in_array($sort, $allowedSort)) {
+    $sort = 'id_pendaftaran';
+}
+
+$order = strtolower($order) === 'asc' ? 'asc' : 'desc';
 
 if ($keyword !== '') {
 
@@ -64,7 +136,7 @@ if ($keyword !== '') {
            OR b.nama_beasiswa LIKE ?
            OR p.jenis_beasiswa LIKE ?
            OR p.tahun LIKE ?
-        ORDER BY p.id_pendaftaran DESC
+        ORDER BY $sort $order
     ");
 
     $stmt->bind_param("sssss", $like, $like, $like, $like, $like);
@@ -92,7 +164,7 @@ if ($keyword !== '') {
         FROM pendaftaran p
         JOIN mahasiswa m ON p.npm = m.npm
         JOIN beasiswa b ON p.id_beasiswa = b.id_beasiswa
-        ORDER BY p.id_pendaftaran DESC
+        ORDER BY $sort $order
     ";
 
     $res = $koneksi->query($sql);
@@ -102,6 +174,18 @@ if ($keyword !== '') {
 
 ob_start();
 ?>
+
+<style>
+    th a {
+        text-decoration: none !important;
+        color: #000;
+        font-weight: 600;
+    }
+
+    th a:hover {
+        color: #000;
+    }
+</style>
 
 
 <div class="card shadow-sm">
@@ -113,10 +197,19 @@ ob_start();
             <?php unset($_SESSION['notif']); ?>
         <?php endif; ?>
 
-        <!-- SEARCH BOX -->
-        <div class="d-flex justify-content-end mb-3">
+
+        <!-- EXPORT + SEARCH -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <!-- Tombol Export CSV -->
+            <a href="pendaftaran.php?export=csv" class="btn btn-info">
+                <i class="bi bi-download me-1"></i> Export CSV
+            </a>
+
+            <!-- Search Box -->
             <form method="get" action="pendaftaran.php" class="d-flex">
                 <div class="input-group" style="width: 320px;">
+
                     <span class="input-group-text bg-white">
                         <i class="bi bi-search"></i>
                     </span>
@@ -127,25 +220,78 @@ ob_start();
                     <?php if ($keyword !== ''): ?>
                         <a href="pendaftaran.php" class="btn btn-outline-secondary">Reset</a>
                     <?php endif; ?>
+
                 </div>
             </form>
         </div>
+
         <div class="card-body">
 
             <table class="table table-bordered table-hover">
+                <?php
+                function sortIcon($field, $sort, $order)
+                {
+                    if ($field !== $sort)
+                        return ""; // kolom tidak sedang di-sort
+                
+                    return $order === 'asc' ? " ▲" : " ▼";
+                }
+                ?>
                 <thead class="table-primary text-center">
                     <tr>
                         <th>No</th>
-                        <th>NPM</th>
-                        <th>Nama</th>
-                        <th>Beasiswa</th>
-                        <th>Jenis</th>
-                        <th>Status Reviewer</th>
-                        <th>Status Admin</th>
-                        <th>Tgl Daftar</th>
+
+                        <th>
+                            <a href="?sort=npm&order=<?= ($sort == 'npm' && $order == 'asc') ? 'desc' : 'asc' ?>">
+                                NPM<?= sortIcon('npm', $sort, $order) ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a href="?sort=nama&order=<?= ($sort == 'nama' && $order == 'asc') ? 'desc' : 'asc' ?>">
+                                Nama<?= sortIcon('nama', $sort, $order) ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a
+                                href="?sort=nama_beasiswa&order=<?= ($sort == 'nama_beasiswa' && $order == 'asc') ? 'desc' : 'asc' ?>">
+                                Beasiswa<?= sortIcon('nama_beasiswa', $sort, $order) ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a
+                                href="?sort=jenis_beasiswa&order=<?= ($sort == 'jenis_beasiswa' && $order == 'asc') ? 'desc' : 'asc' ?>">
+                                Jenis<?= sortIcon('jenis_beasiswa', $sort, $order) ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a
+                                href="?sort=status_reviewer&order=<?= ($sort == 'status_reviewer' && $order == 'asc') ? 'desc' : 'asc' ?>">
+                                Status Reviewer<?= sortIcon('status_reviewer', $sort, $order) ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a
+                                href="?sort=status_admin&order=<?= ($sort == 'status_admin' && $order == 'asc') ? 'desc' : 'asc' ?>">
+                                Status Admin<?= sortIcon('status_admin', $sort, $order) ?>
+                            </a>
+                        </th>
+
+                        <th>
+                            <a
+                                href="?sort=tgl_daftar&order=<?= ($sort == 'tgl_daftar' && $order == 'asc') ? 'desc' : 'asc' ?>">
+                                Tgl Daftar<?= sortIcon('tgl_daftar', $sort, $order) ?>
+                            </a>
+                        </th>
+
                         <th>Aksi</th>
                     </tr>
                 </thead>
+
 
                 <tbody>
                     <?php
