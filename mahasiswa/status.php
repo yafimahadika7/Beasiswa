@@ -2,31 +2,46 @@
 session_start();
 require_once "../config/koneksi.php";
 
-if ($_SESSION['role'] !== 'mahasiswa') {
+/* ======================================
+   CEK ROLE MAHASISWA
+====================================== */
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mahasiswa') {
     header("Location: ../login.php");
     exit;
 }
 
 $page_title = "Status Pengajuan";
 
-$npm = $_SESSION['npm'] ?? $_SESSION['username'] ?? '';
-if ($npm == '') {
+/* ======================================
+   AMBIL NPM DARI SESSION
+   (PHP 7.4 TIDAK SUKA CHAINING COMPLEX ??)
+====================================== */
+$npm = "";
+if (isset($_SESSION['npm'])) {
+    $npm = $_SESSION['npm'];
+} elseif (isset($_SESSION['username'])) {
+    $npm = $_SESSION['username'];
+}
+
+if ($npm === "") {
     die("Sesi mahasiswa tidak ditemukan.");
 }
 
-/* ====================================================
+/* ======================================
    HANDLE EDIT BERKAS
-==================================================== */
+====================================== */
 if (isset($_POST['edit_berkas'])) {
+
     $id_pendaftaran = $_POST['id_pendaftaran'];
 
-    $jenis = [
+    $jenis_list = array(
         "ktp" => "KTP",
         "kk" => "Kartu Keluarga",
         "transkrip" => "Transkrip Nilai"
-    ];
+    );
 
-    foreach ($jenis as $field => $label) {
+    foreach ($jenis_list as $field => $label) {
+
         if (!empty($_FILES[$field]['name'])) {
 
             $filename = time() . "_" . basename($_FILES[$field]['name']);
@@ -34,12 +49,14 @@ if (isset($_POST['edit_berkas'])) {
 
             if (move_uploaded_file($_FILES[$field]['tmp_name'], $target)) {
 
-                $koneksi->query("
+                $sqlUpdate = "
                     UPDATE berkas_pendaftaran
                     SET nama_file='$filename', path_file='$target'
                     WHERE id_pendaftaran='$id_pendaftaran'
                       AND jenis_berkas='$label'
-                ");
+                ";
+
+                $koneksi->query($sqlUpdate);
             }
         }
     }
@@ -49,10 +66,10 @@ if (isset($_POST['edit_berkas'])) {
     exit;
 }
 
-/* ====================================================
+/* ======================================
    AMBIL DATA PENGAJUAN
-==================================================== */
-$q = "
+====================================== */
+$sql = "
     SELECT 
         p.id_pendaftaran,
         b.nama_beasiswa,
@@ -66,11 +83,8 @@ $q = "
     ORDER BY p.id_pendaftaran DESC
 ";
 
-$data = $koneksi->query($q);
+$data = $koneksi->query($sql);
 
-/* ============================
-   SIMPAN MODAL DI PENAMPUNG
-============================ */
 $modal_container = "";
 
 ob_start();
@@ -88,13 +102,14 @@ ob_start();
 
 <h4 class="mb-3">Status Pengajuan Beasiswa</h4>
 
-<?php if (!empty($_SESSION['notif'])): ?>
+<?php if (isset($_SESSION['notif'])): ?>
     <div class="alert alert-success"><?= $_SESSION['notif']; ?></div>
     <?php unset($_SESSION['notif']); ?>
 <?php endif; ?>
 
 <div class="card shadow-sm border-0">
     <div class="card-body">
+
         <table class="table table-bordered table-hover">
             <thead class="table-primary text-center">
                 <tr>
@@ -109,51 +124,53 @@ ob_start();
             </thead>
 
             <tbody>
+
                 <?php
                 $no = 1;
+
                 while ($p = $data->fetch_assoc()):
                     $idp = $p['id_pendaftaran'];
 
-                    // ambil berkas
-                    $berkas_data = $koneksi->query("
-    SELECT jenis_berkas, nama_file, path_file, status_verifikasi
-    FROM berkas_pendaftaran
-    WHERE id_pendaftaran='$idp'
-");
+                    // Ambil berkas
+                    $berkas_q = "
+                        SELECT jenis_berkas, nama_file, path_file, status_verifikasi
+                        FROM berkas_pendaftaran
+                        WHERE id_pendaftaran='$idp'
+                    ";
+                    $berkas_data = $koneksi->query($berkas_q);
 
+                    // Tentukan badge status (PHP 7.4 COMPAT)
+                    $status = $p['status_pendaftaran'];
+                    $badge = "bg-secondary";
+
+                    if ($status === "Lolos Verifikasi") {
+                        $badge = "bg-success";
+                    } elseif ($status === "Ditolak") {
+                        $badge = "bg-danger";
+                    } elseif ($status === "Menunggu Verifikasi") {
+                        $badge = "bg-warning text-dark";
+                    }
                     ?>
+
                     <tr class="align-middle">
                         <td class="text-center"><?= $no++; ?></td>
-                        <td><?= $p['nama_beasiswa']; ?></td>
-                        <td class="text-center"><?= $p['jenis_beasiswa']; ?></td>
-                        <td class="text-center"><?= $p['tahun']; ?></td>
+                        <td><?= htmlspecialchars($p['nama_beasiswa']); ?></td>
+                        <td class="text-center"><?= htmlspecialchars($p['jenis_beasiswa']); ?></td>
+                        <td class="text-center"><?= htmlspecialchars($p['tahun']); ?></td>
                         <td class="text-center"><?= date('d-m-Y H:i', strtotime($p['tgl_daftar'])); ?></td>
-                        <td class="text-center">
-                            <?php
-                            $status = $p['status_pendaftaran'];
-                            $badge = "bg-secondary"; // default
-                        
-                            if ($status === "Lolos Verifikasi") {
-                                $badge = "bg-success";
-                            } elseif ($status === "Ditolak") {
-                                $badge = "bg-danger";
-                            } elseif ($status === "Menunggu Verifikasi") {
-                                $badge = "bg-warning text-dark";
-                            }
 
-                            ?>
+                        <td class="text-center">
                             <span class="badge <?= $badge ?>"><?= $status ?></span>
                         </td>
 
 
                         <td class="text-center">
-
-                            <!-- Lihat -->
+                            
                             <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#detail<?= $idp ?>">
                                 <i class="bi bi-eye"></i>
                             </button>
 
-                            <!-- Edit -->
+
                             <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#edit<?= $idp ?>">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
@@ -162,10 +179,10 @@ ob_start();
                     </tr>
 
                     <?php
-                    /* ===============================
-                       GENERATE MODAL (diluar tabel)
-                    ================================*/
-                    $modal_container .= "
+                    /* ==========================================
+                       GENERATE MODAL DETAIL + EDIT BERKAS
+                    ===========================================*/
+                    $modal_html = "
 
 <!-- Modal Detail -->
 <div class='modal fade' id='detail$idp' tabindex='-1'>
@@ -173,8 +190,8 @@ ob_start();
 <div class='modal-content'>
 
 <div class='modal-header'>
-<h5 class='modal-title'><i class=\"bi bi-eye\"></i> Detail Pengajuan</h5>
-<button class='btn-close' data-bs-dismiss='modal'></button>
+  <h5 class='modal-title'><i class=\"bi bi-eye\"></i> Detail Pengajuan</h5>
+  <button class='btn-close' data-bs-dismiss='modal'></button>
 </div>
 
 <div class='modal-body'>
@@ -190,7 +207,7 @@ ob_start();
 <ul class='list-group'>";
 
                     while ($b = $berkas_data->fetch_assoc()) {
-                        $modal_container .= "
+                        $modal_html .= "
 <li class='list-group-item d-flex justify-content-between align-items-center'>
     <span><strong>{$b['jenis_berkas']}</strong> <small>({$b['status_verifikasi']})</small></span>
     <a href='{$b['path_file']}' target='_blank' class='btn btn-sm btn-secondary'>
@@ -199,7 +216,7 @@ ob_start();
 </li>";
                     }
 
-                    $modal_container .= "
+                    $modal_html .= "
 </ul>
 </div>
 
@@ -246,9 +263,11 @@ ob_start();
 </div>
 
 ";
-                    ?>
 
-                <?php endwhile; ?>
+                    $modal_container .= $modal_html;
+
+                endwhile;
+                ?>
             </tbody>
         </table>
     </div>
@@ -259,3 +278,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 include "layout.php";
+?>

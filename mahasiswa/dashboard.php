@@ -3,26 +3,40 @@ session_start();
 require_once "../config/koneksi.php";
 
 // Cek role mahasiswa
-if ($_SESSION['role'] !== 'mahasiswa') {
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mahasiswa') {
     header("Location: ../login.php");
     exit;
 }
 
 $page_title = "Dashboard Mahasiswa";
-$nama = $_SESSION['nama'];
+$nama = isset($_SESSION['nama']) ? $_SESSION['nama'] : "";
 
 // Ambil NPM mahasiswa dari tabel mahasiswa
-$getNPM = $koneksi->prepare("SELECT npm FROM mahasiswa WHERE id_user = ?");
-$getNPM->bind_param("i", $_SESSION['id_user']);
-$getNPM->execute();
-$resultNPM = $getNPM->get_result();
-$dataNPM = $resultNPM->fetch_assoc();
-$npm = $dataNPM['npm'] ?? null;
+$npm = null;
+
+if (isset($_SESSION['id_user'])) {
+
+    $getNPM = $koneksi->prepare("
+        SELECT npm 
+        FROM mahasiswa 
+        WHERE id_user = ?
+    ");
+    $getNPM->bind_param("i", $_SESSION['id_user']);
+    $getNPM->execute();
+    $resultNPM = $getNPM->get_result();
+
+    if ($resultNPM && $resultNPM->num_rows > 0) {
+        $dataNPM = $resultNPM->fetch_assoc();
+        $npm = $dataNPM['npm'];
+    }
+
+    $getNPM->close();
+}
 
 // Ambil pengajuan terbaru
 $statusPengajuan = null;
 
-if ($npm) {
+if ($npm !== null) {
     $query = $koneksi->prepare("
         SELECT 
             tahun,
@@ -38,13 +52,18 @@ if ($npm) {
     $query->bind_param("s", $npm);
     $query->execute();
     $res = $query->get_result();
-    $statusPengajuan = $res->fetch_assoc();
+
+    if ($res && $res->num_rows > 0) {
+        $statusPengajuan = $res->fetch_assoc();
+    }
+
+    $query->close();
 }
 
 ob_start();
 ?>
 
-<h3 class="fw-bold mb-3">Selamat datang, <?= htmlspecialchars($nama) ?>! 👋</h3>
+<h3 class="fw-bold mb-3">Selamat datang, <?= htmlspecialchars($nama, ENT_QUOTES, 'UTF-8') ?>! 👋</h3>
 <p class="text-muted mb-4">Berikut adalah ringkasan status pengajuan beasiswa Anda.</p>
 
 <div class="row g-4">
@@ -59,7 +78,7 @@ ob_start();
                     Status Pengajuan Terakhir
                 </h5>
 
-                <?php if (!$statusPengajuan): ?>
+                <?php if ($statusPengajuan === null): ?>
 
                     <p class="text-muted">Anda belum pernah mengajukan beasiswa.</p>
                     <a href="ajukan.php" class="btn btn-primary mt-2">
@@ -69,47 +88,45 @@ ob_start();
                 <?php else: ?>
 
                     <ul class="list-group">
+
                         <li class="list-group-item">
-                            <strong>Tahun:</strong> <?= $statusPengajuan['tahun'] ?>
+                            <strong>Tahun:</strong> <?= htmlspecialchars($statusPengajuan['tahun']) ?>
                         </li>
+
                         <li class="list-group-item">
-                            <strong>Jenis Beasiswa:</strong> <?= $statusPengajuan['jenis_beasiswa'] ?>
+                            <strong>Jenis Beasiswa:</strong>
+                            <?= htmlspecialchars($statusPengajuan['jenis_beasiswa']) ?>
                         </li>
+
                         <li class="list-group-item">
-                            <strong>Tanggal Pengajuan:</strong> <?= $statusPengajuan['tgl_daftar'] ?>
+                            <strong>Tanggal Pengajuan:</strong>
+                            <?= htmlspecialchars($statusPengajuan['tgl_daftar']) ?>
                         </li>
 
                         <li class="list-group-item">
                             <strong>Status:</strong>
+
                             <?php
                             $status = $statusPengajuan['status_pendaftaran'];
 
                             // Tentukan warna badge
-                            switch ($status) {
-                                case 'Diajukan':
-                                    $badgeColor = 'secondary';
-                                    break;
+                            $badgeColor = "secondary";
 
-                                case 'Diproses':
-                                    $badgeColor = 'info';
-                                    break;
-
-                                case 'Lolos Verifikasi':
-                                    $badgeColor = 'success';
-                                    break;
-
-                                case 'Tidak Lolos':
-                                    $badgeColor = 'danger';
-                                    break;
-
-                                default:
-                                    $badgeColor = 'secondary';
-                            }
+                            if ($status === "Diajukan")
+                                $badgeColor = "warning text-dark";
+                            elseif ($status === "Diproses")
+                                $badgeColor = "info text-dark";
+                            elseif ($status === "Lolos Verifikasi")
+                                $badgeColor = "success";
+                            elseif ($status === "Tidak Lolos")
+                                $badgeColor = "danger";
                             ?>
+
                             <span class="badge bg-<?= $badgeColor ?> text-uppercase">
-                                <?= $status ?>
+                                <?= htmlspecialchars($status) ?>
                             </span>
                         </li>
+
                     </ul>
 
                     <a href="status.php" class="btn btn-outline-primary mt-3">

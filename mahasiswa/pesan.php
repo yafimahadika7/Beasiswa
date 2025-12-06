@@ -2,17 +2,18 @@
 session_start();
 require_once "../config/koneksi.php";
 
-if ($_SESSION['role'] !== 'mahasiswa') {
+// Cek role mahasiswa
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mahasiswa') {
     header("Location: ../login.php");
     exit;
 }
 
 $page_title = "Daftar Pesan";
-$id_user = $_SESSION['id_user'];
+$id_user = isset($_SESSION['id_user']) ? $_SESSION['id_user'] : 0;
 
-/* ================================
+/* =====================================================
    AMBIL DAFTAR PESAN
-================================ */
+===================================================== */
 $notif_q = $koneksi->query("
     SELECT id, pesan, tgl, is_read
     FROM notifikasi
@@ -20,19 +21,24 @@ $notif_q = $koneksi->query("
     ORDER BY id DESC
 ");
 
-/* ================================
+/* =====================================================
    HITUNG PESAN BELUM DIBACA
-================================ */
-$notif_unread = $koneksi->query("
+===================================================== */
+$notif_unread = 0;
+$notif_unread_q = $koneksi->query("
     SELECT COUNT(*) AS jml
     FROM notifikasi
     WHERE id_user = '$id_user' AND is_read = 0
-")->fetch_assoc()['jml'];
+");
 
-/* ================================
-   UPDATE PESAN JADI 'DIBACA'
-   Begitu halaman ini dibuka
-================================ */
+if ($notif_unread_q && $notif_unread_q->num_rows > 0) {
+    $rowUnread = $notif_unread_q->fetch_assoc();
+    $notif_unread = isset($rowUnread['jml']) ? $rowUnread['jml'] : 0;
+}
+
+/* =====================================================
+   UPDATE PESAN MENJADI "DIBACA"
+===================================================== */
 $koneksi->query("
     UPDATE notifikasi
     SET is_read = 1
@@ -47,25 +53,28 @@ ob_start();
 <div class="card shadow-sm">
     <div class="card-body">
 
-        <?php if ($notif_q->num_rows == 0): ?>
+        <?php if (!$notif_q || $notif_q->num_rows === 0): ?>
+            
             <p class="text-center text-muted">Belum ada pesan.</p>
 
         <?php else: ?>
+
             <ul class="list-group">
 
                 <?php while ($msg = $notif_q->fetch_assoc()): ?>
 
                     <li class="list-group-item">
-                        <b><?= htmlspecialchars($msg['pesan']) ?></b><br>
+                        <b><?= htmlspecialchars($msg['pesan'], ENT_QUOTES, 'UTF-8') ?></b><br>
 
                         <small class="text-muted">
-                            <?= date('d-m-Y H:i', strtotime($msg['tgl'])) ?>
+                            <?= htmlspecialchars(date('d-m-Y H:i', strtotime($msg['tgl'])), ENT_QUOTES, 'UTF-8') ?>
                         </small>
                     </li>
 
                 <?php endwhile; ?>
 
             </ul>
+
         <?php endif; ?>
 
     </div>
