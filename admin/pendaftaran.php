@@ -17,6 +17,7 @@ if (isset($_POST['validasi_admin'])) {
     $status_admin = $_POST['status_admin'];
     $catatan_admin = $_POST['catatan_admin'];
 
+    // UPDATE STATUS ADMIN
     $stmt = $koneksi->prepare("
         UPDATE pendaftaran
         SET status_admin=?, catatan_admin=?
@@ -24,6 +25,37 @@ if (isset($_POST['validasi_admin'])) {
     ");
     $stmt->bind_param("ssi", $status_admin, $catatan_admin, $id_pendaftaran);
     $stmt->execute();
+
+    // ============================================
+    //  🔔 KIRIM NOTIFIKASI KE MAHASISWA
+    // ============================================
+
+    // Ambil id_user mahasiswa dari pendaftaran
+    $q = $koneksi->query("
+        SELECT m.id_user
+        FROM pendaftaran p
+        JOIN mahasiswa m ON p.npm = m.npm
+        WHERE p.id_pendaftaran = '$id_pendaftaran'
+    ");
+
+    $id_user_mhs = $q->fetch_assoc()['id_user'];
+
+    if ($id_user_mhs) {
+
+        if ($status_admin === "Valid") {
+            $pesan = "Pengajuan beasiswa Anda telah DISETUJUI oleh Admin.";
+        } else {
+            $pesan = "Pengajuan beasiswa Anda DITOLAK oleh Admin.";
+        }
+
+        // Insert notifikasi
+        $koneksi->query("
+            INSERT INTO notifikasi (id_user, pesan)
+            VALUES ('$id_user_mhs', '$pesan')
+        ");
+    }
+
+    // ============================================
 
     $_SESSION['notif'] = "Status administrasi berhasil diperbarui.";
     header("Location: pendaftaran.php");

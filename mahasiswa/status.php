@@ -128,8 +128,23 @@ ob_start();
                         <td class="text-center"><?= $p['jenis_beasiswa']; ?></td>
                         <td class="text-center"><?= $p['tahun']; ?></td>
                         <td class="text-center"><?= date('d-m-Y H:i', strtotime($p['tgl_daftar'])); ?></td>
-                        <td class="text-center"><span
-                                class="badge bg-warning text-dark"><?= $p['status_pendaftaran']; ?></span></td>
+                        <td class="text-center">
+                            <?php
+                            $status = $p['status_pendaftaran'];
+                            $badge = "bg-secondary"; // default
+                        
+                            if ($status === "Lolos Verifikasi") {
+                                $badge = "bg-success";
+                            } elseif ($status === "Ditolak") {
+                                $badge = "bg-danger";
+                            } elseif ($status === "Menunggu Verifikasi") {
+                                $badge = "bg-warning text-dark";
+                            }
+
+                            ?>
+                            <span class="badge <?= $badge ?>"><?= $status ?></span>
+                        </td>
+
 
                         <td class="text-center">
 

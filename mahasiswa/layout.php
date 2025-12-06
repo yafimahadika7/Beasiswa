@@ -5,11 +5,31 @@ if (!isset($content))
     $content = "";
 
 // Cegah akses tanpa login
-
-if ($_SESSION['role'] !== 'mahasiswa') {
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mahasiswa') {
     header("Location: ../login.php");
     exit;
 }
+
+// Koneksi
+require_once "../config/koneksi.php";
+
+$id_user = $_SESSION['id_user'];
+
+// Query 1 → Hitung jumlah notifikasi
+$notif_count_q = $koneksi->query("
+    SELECT COUNT(*) AS jml
+    FROM notifikasi
+    WHERE id_user = '$id_user' AND is_read = 0
+");
+$notif_count = $notif_count_q->fetch_assoc()['jml'];
+
+// Query 2 → Ambil seluruh notifikasi
+$notif_list_q = $koneksi->query("
+    SELECT id, pesan, tgl
+    FROM notifikasi
+    WHERE id_user = '$id_user'
+    ORDER BY id DESC
+");
 ?>
 
 <!doctype html>
@@ -33,7 +53,7 @@ if ($_SESSION['role'] !== 'mahasiswa') {
             min-height: 100vh;
         }
 
-        /* 🎨 Warna biru sama seperti admin */
+        /* Sidebar */
         #sidebar {
             width: 230px;
             background-color: #0d6efd;
@@ -71,12 +91,31 @@ if ($_SESSION['role'] !== 'mahasiswa') {
                 z-index: 1030;
             }
         }
+
+        /* Notifikasi */
+        .notif-icon {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: -4px;
+            right: -2px;
+            background: #dc3545;
+            color: white;
+            font-size: 11px;
+            padding: 2px 5px;
+            border-radius: 50%;
+            min-width: 18px;
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
 
-    <!-- NAVBAR (sama persis admin) -->
+    <!-- NAVBAR -->
     <nav class="navbar navbar-dark bg-primary">
         <div class="container-fluid">
 
@@ -86,9 +125,23 @@ if ($_SESSION['role'] !== 'mahasiswa') {
 
             <a class="navbar-brand ms-3" href="#">Sistem Beasiswa</a>
 
-            <span class="text-white ms-auto">
-                Halo, <?= $_SESSION['nama'] ?> (Mahasiswa)
-            </span>
+            <div class="d-flex align-items-center ms-auto">
+
+                <!-- ICON NOTIFIKASI -->
+                <div class="notif-icon me-3" data-bs-toggle="modal" data-bs-target="#modalNotifikasi">
+                    <i class="bi bi-bell-fill text-white fs-4"></i>
+
+                    <?php if ($notif_count > 0): ?>
+                        <span class="notif-badge"><?= $notif_count ?></span>
+                    <?php endif; ?>
+                </div>
+
+                <span class="text-white">
+                    Halo, <?= $_SESSION['nama'] ?> (Mahasiswa)
+                </span>
+
+            </div>
+
         </div>
     </nav>
 
@@ -122,6 +175,13 @@ if ($_SESSION['role'] !== 'mahasiswa') {
                 </li>
 
                 <li>
+                    <a href="pesan.php"
+                        class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'pesan.php' ? 'active' : '' ?>">
+                        <i class="bi bi-envelope-paper-fill me-2"></i> Pesan
+                    </a>
+                </li>
+
+                <li>
                     <a href="profil.php"
                         class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'profil.php' ? 'active' : '' ?>">
                         <i class="bi bi-person-circle me-2"></i> Profil
@@ -147,9 +207,58 @@ if ($_SESSION['role'] !== 'mahasiswa') {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // Toggle sidebar
         document.getElementById('sidebarToggle').onclick = () =>
             document.getElementById('sidebar').classList.toggle('collapsed');
+
+        // Jika modal notifikasi dibuka → tandai dibaca
+        let modalNotif = document.getElementById("modalNotifikasi");
+        if (modalNotif) {
+            modalNotif.addEventListener("shown.bs.modal", () => {
+                fetch("read_notif.php").then(() => location.reload());
+            });
+        }
     </script>
+
+    <!-- MODAL NOTIFIKASI -->
+    <div class="modal fade" id="modalNotifikasi" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <!-- HEADER -->
+                <div class="modal-header text-white" style="background:#7c4dff;">
+                    <h5 class="modal-title"><b>TOTAL PESAN</b></h5>
+                    <span class="badge bg-dark ms-2"><?= $notif_count ?></span>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <!-- BODY -->
+                <div class="modal-body" style="background:#9f7dff;">
+
+                    <?php if ($notif_count == 0): ?>
+                        <p class="text-center text-white">Belum ada pesan.</p>
+
+                    <?php else: ?>
+                        <?php while ($n = $notif_list_q->fetch_assoc()): ?>
+                            <div class="p-2 mb-2 rounded text-white" style="background:#8e63ff;">
+                                <div class="fw-bold"><?= $n['pesan'] ?></div>
+                                <div class="small text-light">
+                                    <?= date('d-m-Y H:i', strtotime($n['tgl'])) ?>
+                                </div>
+                            </div>
+                        <?php endwhile; ?>
+                    <?php endif; ?>
+
+                </div>
+
+                <!-- FOOTER -->
+                <div class="modal-footer" style="background:#9f7dff;">
+                    <a href="pesan.php" class="btn btn-light w-100">Tampilkan Semua</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
 
 </body>
 
