@@ -21,7 +21,9 @@ $notif_count_q = $koneksi->query("
     FROM notifikasi
     WHERE id_user = '$id_user' AND is_read = 0
 ");
-$notif_count = $notif_count_q->fetch_assoc()['jml'];
+
+$notif_row = $notif_count_q->fetch_assoc();
+$notif_count = $notif_row['jml'];
 
 // Query 2 → Ambil seluruh notifikasi
 $notif_list_q = $koneksi->query("
