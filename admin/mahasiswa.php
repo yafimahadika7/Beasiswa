@@ -371,6 +371,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 /* ===========================================================
    AMBIL DATA MAHASISWA
    =========================================================== */
+$dataMhs = array();
+
 $keyword = trim($_GET['q'] ?? '');
 $sort = $_GET['sort'] ?? 'npm';              // default sort by npm
 $order = $_GET['order'] ?? 'asc';           // default ascending
