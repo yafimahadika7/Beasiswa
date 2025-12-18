@@ -49,3 +49,27 @@ Setiap role memiliki hak akses dan menu yang berbeda sesuai dengan fungsinya.
 
 ### Dashboard Mahasiswa
 <img width="1351" height="595" alt="image" src="https://github.com/user-attachments/assets/508b9634-cd52-4482-9dd1-c27e3052b576" />
+
+## 📁 Fitur Utama
+- Login multi-role (Admin, Reviewer, Mahasiswa)
+- Manajemen user oleh Admin
+- Pendaftaran beasiswa oleh Mahasiswa
+- Proses penilaian oleh Reviewer
+- Dashboard sesuai role
+
+## 🚀 Cara Menjalankan Aplikasi
+
+Berikut adalah langkah-langkah untuk menjalankan aplikasi **Sistem Informasi
+Pendaftaran Beasiswa** pada lingkungan lokal:
+
+1. Clone repository project ke komputer lokal.
+2. Pindahkan folder project ke dalam direktori web server XAMPP, yaitu folder htdocs.
+3. Jalankan layanan Apache dan MySQL melalui XAMPP Control Panel.
+4. Buka browser dan akses phpMyAdmin melalui alamat http://localhost/phpmyadmin.
+5. Buat database baru dengan nama db_beasiswa.
+6. Import file database db_beasiswa.sql yang tersedia pada folder database di dalam project.
+7. Buka file konfigurasi koneksi database pada folder config (file koneksi.php), kemudian sesuaikan pengaturan koneksi database dengan server lokal.
+8. Akses aplikasi melalui browser dengan alamat http://localhost/nama-folder-project.
+9. Login ke sistem menggunakan akun default sesuai dengan role pengguna (Admin, Reviewer, dan Mahasiswa).
+
+> Aplikasi ini dijalankan pada lingkungan lokal menggunakan XAMPP sebagai web server dan MySQL sebagai basis data.
