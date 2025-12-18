@@ -1,4 +1,4 @@
-**Project Pemrograman Web – Rancangan Basis Data Sistem Informasi Pendaftaran Beasiswa**
+# Project Pemrograman Web – Rancangan Basis Data Sistem Informasi Pendaftaran Beasiswa
 
 ## 📌 Deskripsi Sistem
 Sistem Informasi Pendaftaran Beasiswa berbasis web yang dibangun menggunakan
