@@ -1,5 +1,6 @@
-**##Project Pemrograman Web – Rancangan Basis Data Sistem Informasi Pendaftaran Beasiswa**
+**Project Pemrograman Web – Rancangan Basis Data Sistem Informasi Pendaftaran Beasiswa**
 
+## 📌 Deskripsi Sistem
 Sistem Informasi Pendaftaran Beasiswa berbasis web yang dibangun menggunakan
 PHP dan MySQL dengan konsep **multi-role user**, yaitu:
 - Admin
@@ -8,15 +9,16 @@ PHP dan MySQL dengan konsep **multi-role user**, yaitu:
 
 Setiap role memiliki hak akses dan menu yang berbeda sesuai dengan fungsinya.
 
-### Admin
+## 🔐 Akun Login Default
+**Admin**
 - **Username** : admin  
 - **Password** : admin123
 
-### Reviewer
+**Reviewer**
 - **Username** : Reviewer  
 - **Password** : Reviewer123
 
-### Mahasiswa
+**Mahasiswa**
 - **Username** : NIM  
 - **Password** : `#unpam` + 6 digit terakhir NIM  
 
@@ -24,7 +26,7 @@ Setiap role memiliki hak akses dan menu yang berbeda sesuai dengan fungsinya.
 - NIM : `221011400189`
 - Password : `#unpam400189`
 
-**Teknologi yang Digunakan**
+## 🛠️ Teknologi yang Digunakan
 - PHP Native
 - MySQL
 - HTML, CSS, Bootstrap
