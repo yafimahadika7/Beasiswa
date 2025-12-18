@@ -21,13 +21,3 @@ dan penilaian beasiswa.
 
 **Diagram Database**
 <img width="1228" height="642" alt="image" src="https://github.com/user-attachments/assets/0d5bb494-1f67-466a-a430-05e7a633c700" />
-
-**Login Akun Default**
-======Role Admin======
-Username : admin
-Password : admin123
-======================
-==== Role Reviewer ====
-Username : reviewer
-Password : reviewer123
-=======================
