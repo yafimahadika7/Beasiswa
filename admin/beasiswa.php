@@ -178,10 +178,10 @@ ob_start();
                                     </button>
 
                                     <!-- Hapus -->
-                                    <a href="beasiswa.php?hapus=<?= $b['id_beasiswa']; ?>" class="btn btn-danger btn-sm"
-                                        onclick="return confirm('Hapus data ini?');">
+                                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalHapus"
+                                        onclick="setHapusBeasiswa(<?= $b['id_beasiswa']; ?>, '<?= htmlspecialchars($b['nama_beasiswa'], ENT_QUOTES); ?>')">
                                         <i class="bi bi-trash3"></i>
-                                    </a>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -276,7 +276,29 @@ ob_start();
     </div>
 </div>
 
+<!-- MODAL HAPUS -->
+<div class="modal fade" id="modalHapus" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
 
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Konfirmasi Hapus</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p>Yakin ingin menghapus data beasiswa berikut?</p>
+                <strong id="hapus_nama_beasiswa"></strong>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <a href="#" id="btnHapusFix" class="btn btn-danger">Hapus</a>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <!-- MODAL EDIT -->
 <div class="modal fade" id="modalEdit" tabindex="-1">
@@ -378,6 +400,11 @@ ob_start();
 
         document.getElementById("edit_semester").value = data.semester_minimal;
         document.getElementById("edit_status").value = data.status;
+    }
+
+    function setHapusBeasiswa(id, nama) {
+        document.getElementById("hapus_nama_beasiswa").innerText = nama;
+        document.getElementById("btnHapusFix").href = "beasiswa.php?hapus=" + id;
     }
 </script>
 

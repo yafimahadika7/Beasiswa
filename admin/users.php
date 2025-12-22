@@ -331,14 +331,14 @@ ob_start();
                                     <!-- Tombol Edit -->
                                     <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
                                         data-bs-target="#modalEdit<?= (int) $u['id_user'] ?>">
-                                        <i class="bi bi-pencil-square"></i> Edit
+                                        <i class="bi bi-pencil-square"></i>
                                     </button>
 
                                     <!-- Tombol Hapus -->
                                     <button type="button" class="btn btn-danger btn-sm btn-delete"
                                         data-href="users.php?hapus=<?= (int) $u['id_user'] ?>"
                                         data-username="<?= htmlspecialchars($u['username'], ENT_QUOTES, 'UTF-8') ?>">
-                                        <i class="bi bi-trash"></i> Hapus
+                                        <i class="bi bi-trash"></i>
                                     </button>
                                 </td>
                             </tr>

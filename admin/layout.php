@@ -127,7 +127,7 @@ if (!isset($content))
                 <li>
                     <a href="users.php"
                         class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'users.php' ? 'active' : '' ?>">
-                        <i class="bi bi-people-gear me-2"></i> Manajemen User
+                        <i class="bi bi-people me-2"></i> Manajemen User
                     </a>
                 </li>
 

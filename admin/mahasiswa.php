@@ -557,13 +557,14 @@ function sortUrl($column, $currentSort, $currentOrder)
                                 <td class="text-center">
 
                                     <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                                        data-bs-target="#modalEdit<?= $m['npm'] ?>">
-                                        Edit
+                                        data-bs-target="#modalEdit<?= $m['npm'] ?>" title="Edit Data">
+                                        <i class="bi bi-pencil-square"></i>
                                     </button>
 
                                     <button type="button" class="btn btn-danger btn-sm btn-delete" data-npm="<?= $m['npm'] ?>"
-                                        data-nama="<?= $m['nama'] ?>" data-href="mahasiswa.php?hapus=<?= $m['npm'] ?>">
-                                        Hapus
+                                        data-nama="<?= htmlspecialchars($m['nama'], ENT_QUOTES) ?>"
+                                        data-href="mahasiswa.php?hapus=<?= $m['npm'] ?>" title="Hapus Data">
+                                        <i class="bi bi-trash3"></i>
                                     </button>
 
                                 </td>
