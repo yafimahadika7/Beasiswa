@@ -234,7 +234,7 @@ if (isset($_POST['login'])) {
                                 <h5 class="fw-semibold mb-2">Sistem Beasiswa</h5>
                                 <p class="small-text mb-0">
                                     Sistem informasi pendaftaran beasiswa<br>
-                                    Universitas Pamulang.
+                                    Universitas Terbuka.
                                 </p>
                             </div>
                         </div>
